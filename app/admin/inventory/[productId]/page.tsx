@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
+
+import InventoryAdjustmentForm from "@/components/inventory/InventoryAdjustmentForm";
+import InventoryThresholdForm from "@/components/inventory/InventoryThresholdForm";
+
 import {
   getInventoryHistory,
   getInventoryProduct,
 } from "@/lib/admin/inventory/queries";
-import InventoryAdjustmentForm from "@/components/inventory/InventoryAdjustmentForm";
 
 export default async function InventoryDetailPage({
   params,
@@ -30,19 +33,25 @@ export default async function InventoryDetailPage({
     0
   );
 
+  const isLowStock =
+    available <= inventory.low_stock_threshold;
+
   return (
-    <div className="max-w-6xl">
-      <div className="mb-8">
+    <div className="max-w-6xl space-y-6">
+      {/* Page Header */}
+      <div>
         <h2 className="text-2xl font-semibold">
           Inventory Management
         </h2>
 
         <p className="mt-1 text-sm text-gray-500">
-          Manage stock and review inventory history.
+          Manage stock, configure low-stock alerts, and review
+          inventory history.
         </p>
       </div>
 
-      <div className="mb-6 rounded-lg border bg-white p-6">
+      {/* Product + Stock Summary */}
+      <div className="rounded-lg border bg-white p-6">
         <div className="mb-6">
           <h3 className="text-xl font-semibold">
             {product?.name ?? "Unknown Product"}
@@ -53,7 +62,8 @@ export default async function InventoryDetailPage({
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
+          {/* Current Stock */}
           <div className="rounded-md border p-4">
             <p className="text-sm text-gray-500">
               Current Stock
@@ -64,6 +74,7 @@ export default async function InventoryDetailPage({
             </p>
           </div>
 
+          {/* Reserved */}
           <div className="rounded-md border p-4">
             <p className="text-sm text-gray-500">
               Reserved
@@ -74,6 +85,7 @@ export default async function InventoryDetailPage({
             </p>
           </div>
 
+          {/* Available */}
           <div className="rounded-md border p-4">
             <p className="text-sm text-gray-500">
               Available
@@ -83,22 +95,50 @@ export default async function InventoryDetailPage({
               {available}
             </p>
           </div>
+
+          {/* Status */}
+          <div className="rounded-md border p-4">
+            <p className="text-sm text-gray-500">
+              Status
+            </p>
+
+            <div className="mt-2">
+              {isLowStock ? (
+                <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">
+                  Low Stock
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                  In Stock
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Low Stock Threshold */}
+      <InventoryThresholdForm
+        productId={inventory.product_id}
+        currentThreshold={inventory.low_stock_threshold}
+      />
+
+      {/* Stock Adjustment */}
       <InventoryAdjustmentForm
         productId={inventory.product_id}
         currentQuantity={inventory.quantity}
       />
 
-      <section className="mt-6 rounded-lg border bg-white">
+      {/* Stock History */}
+      <section className="rounded-lg border bg-white">
         <div className="border-b p-6">
           <h3 className="font-semibold">
             Stock History
           </h3>
 
           <p className="mt-1 text-sm text-gray-500">
-            Every manual inventory adjustment is recorded here.
+            Every manual inventory adjustment is recorded
+            here.
           </p>
         </div>
 
