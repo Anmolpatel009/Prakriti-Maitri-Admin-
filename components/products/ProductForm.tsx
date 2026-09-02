@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ProductImageUploader from "@/components/products/ProductImageUploader";
 
 type Category = {
   id: string;
@@ -43,6 +44,8 @@ export default function ProductForm({
   const [quantity, setQuantity] = useState("0");
   const [isActive, setIsActive] = useState(true);
 
+  const [images, setImages] = useState<File[]>([]);
+
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -78,9 +81,14 @@ export default function ProductForm({
     setError("");
     setSaving(true);
 
-    const { data, error } = await supabase.rpc(
-      "create_product_with_inventory",
-      {
+    /*
+     * STEP 1
+     * Create the product and inventory.
+     *
+     * The RPC returns the newly created product UUID.
+     */
+    const { data: productId, error: productError } =
+      await supabase.rpc("create_product_with_inventory", {
         p_category_id: categoryId || null,
         p_subcategory_id: subcategoryId || null,
         p_name: name.trim(),
@@ -93,27 +101,124 @@ export default function ProductForm({
         p_sku: sku.trim(),
         p_is_active: isActive,
         p_quantity: Number(quantity),
-      }
-    );
+      });
 
-    if (error) {
-      setError(error.message);
+    if (productError) {
+      setError(productError.message);
       setSaving(false);
       return;
     }
 
-    if (!data) {
+    if (!productId) {
       setError("Product could not be created.");
       setSaving(false);
       return;
     }
 
+    /*
+     * STEP 2
+     * Upload product images.
+     */
+    const uploadedFiles: string[] = [];
+
+    try {
+      for (let index = 0; index < images.length; index++) {
+        const file = images[index];
+
+        const extension =
+          file.name.split(".").pop()?.toLowerCase() || "jpg";
+
+        const fileName = `${crypto.randomUUID()}.${extension}`;
+
+        const filePath = `products/${productId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          });
+
+        if (uploadError) {
+          throw new Error(
+            `Failed to upload ${file.name}: ${uploadError.message}`
+          );
+        }
+
+        uploadedFiles.push(filePath);
+
+        /*
+         * STEP 3
+         * Generate the public URL for the uploaded image.
+         */
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(filePath);
+
+        /*
+         * STEP 4
+         * Save image metadata in product_images.
+         */
+        const { error: imageRecordError } = await supabase
+          .from("product_images")
+          .insert({
+            product_id: productId,
+            image_url: publicUrl,
+            alt_text: name.trim(),
+            display_order: index,
+          });
+
+        if (imageRecordError) {
+          throw new Error(
+            `Failed to save image information: ${imageRecordError.message}`
+          );
+        }
+      }
+    } catch (imageError) {
+      /*
+       * STEP 5
+       * If an image operation fails, remove files that were
+       * already uploaded during this submission.
+       */
+      if (uploadedFiles.length > 0) {
+        await supabase.storage
+          .from("product-images")
+          .remove(uploadedFiles);
+      }
+
+      /*
+       * Remove image database records that may have been
+       * created before the failure.
+       */
+      await supabase
+        .from("product_images")
+        .delete()
+        .eq("product_id", productId);
+
+      setError(
+        imageError instanceof Error
+          ? imageError.message
+          : "Failed to upload product images."
+      );
+
+      setSaving(false);
+      return;
+    }
+
+    /*
+     * STEP 6
+     * Everything succeeded.
+     */
     router.push("/admin/products");
     router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+      {/* Product Information */}
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Product Information</h3>
 
@@ -122,6 +227,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               Product name
             </label>
+
             <input
               required
               value={name}
@@ -135,6 +241,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               Slug
             </label>
+
             <input
               required
               value={slug}
@@ -148,6 +255,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               SKU
             </label>
+
             <input
               value={sku}
               onChange={(event) => setSku(event.target.value)}
@@ -160,6 +268,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               Description
             </label>
+
             <textarea
               rows={5}
               value={description}
@@ -170,6 +279,7 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Pricing */}
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Pricing</h3>
 
@@ -178,6 +288,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               Price (₹)
             </label>
+
             <input
               required
               min="0"
@@ -193,6 +304,7 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium">
               Compare-at price (₹)
             </label>
+
             <input
               min="0"
               step="0.01"
@@ -207,6 +319,7 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Category */}
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Category</h3>
 
@@ -264,6 +377,14 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Product Images */}
+      <ProductImageUploader
+        value={images}
+        onChange={setImages}
+        disabled={saving}
+      />
+
+      {/* Inventory */}
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Inventory</h3>
 
@@ -284,6 +405,7 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Active Status */}
       <section className="rounded-lg border bg-white p-6">
         <label className="flex items-center gap-3">
           <input
@@ -298,12 +420,14 @@ export default function ProductForm({
         </label>
       </section>
 
+      {/* Error */}
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
       )}
 
+      {/* Actions */}
       <div className="flex justify-end gap-3">
         <button
           type="button"
