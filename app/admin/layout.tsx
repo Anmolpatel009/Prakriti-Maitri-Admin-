@@ -57,6 +57,13 @@ export default async function AdminLayout({
               Customers
             </a>
 
+            <a
+              href="/admin/bulk-orders"
+              className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Bulk Order Enquiries
+            </a>
+
             <a href="/admin/homepage">Homepage</a>
 <a
               href="/admin/media"
