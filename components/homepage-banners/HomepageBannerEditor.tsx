@@ -8,6 +8,7 @@ type HomepageBanner = {
   slot: number;
   image_url: string;
   alt_text: string | null;
+  destination_url: string | null;
   is_active: boolean;
 };
 
@@ -39,6 +40,11 @@ export default function HomepageBannerEditor({
   const [altText, setAltText] = useState(
     banner?.alt_text ?? ""
   );
+
+  const [destinationUrl, setDestinationUrl] = useState(
+    banner?.destination_url ?? ""
+  );
+
   const [isActive, setIsActive] = useState(
     banner?.is_active ?? true
   );
@@ -109,6 +115,7 @@ export default function HomepageBannerEditor({
               slot,
               image_url: publicUrl,
               alt_text: altText || null,
+              destination_url: destinationUrl.trim() || null,
               is_active: isActive,
               updated_at: new Date().toISOString(),
             },
@@ -164,6 +171,19 @@ export default function HomepageBannerEditor({
         );
       }
 
+      const normalizedDestinationUrl = destinationUrl.trim();
+
+      if (
+        normalizedDestinationUrl &&
+        !normalizedDestinationUrl.startsWith("/") &&
+        !normalizedDestinationUrl.startsWith("https://") &&
+        !normalizedDestinationUrl.startsWith("http://")
+      ) {
+        throw new Error(
+          "Destination URL must start with /, https:// or http://."
+        );
+      }
+
       const { error } = await supabase
         .from("homepage_banners")
         .upsert(
@@ -172,6 +192,7 @@ export default function HomepageBannerEditor({
             slot,
             image_url: imageUrl,
             alt_text: altText || null,
+            destination_url: destinationUrl.trim() || null,
             is_active: isActive,
             updated_at: new Date().toISOString(),
           },
@@ -239,6 +260,7 @@ export default function HomepageBannerEditor({
 
       setImageUrl("");
       setAltText("");
+      setDestinationUrl("");
       setIsActive(true);
 
       setMessage("Banner removed successfully.");
@@ -393,6 +415,46 @@ export default function HomepageBannerEditor({
             boxSizing: "border-box",
           }}
         />
+      </div>
+
+      <div style={{ marginBottom: 18 }}>
+        <label
+          htmlFor={`homepage-banner-url-${slot}`}
+          style={{
+            display: "block",
+            fontWeight: 500,
+            marginBottom: 8,
+          }}
+        >
+          Destination URL
+        </label>
+
+        <input
+          id={`homepage-banner-url-${slot}`}
+          type="text"
+          value={destinationUrl}
+          onChange={(event) =>
+            setDestinationUrl(event.target.value)
+          }
+          placeholder="/collections or https://example.com"
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            border: "1px solid #d1d5db",
+            borderRadius: 6,
+            boxSizing: "border-box",
+          }}
+        />
+
+        <p
+          style={{
+            margin: "6px 0 0",
+            color: "#6b7280",
+            fontSize: 12,
+          }}
+        >
+          Optional. Clicking this banner will open this destination.
+        </p>
       </div>
 
       <div

@@ -6,7 +6,7 @@ export default async function HomepagePromotionalBanners() {
 
   const { data: banners } = await supabase
     .from("homepage_banners")
-    .select("id, slot, image_url, alt_text, is_active")
+    .select("id, slot, image_url, alt_text, destination_url, is_active")
     .order("slot", { ascending: true });
 
   const bannerMap = new Map(
