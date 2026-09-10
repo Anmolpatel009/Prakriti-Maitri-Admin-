@@ -1,4 +1,5 @@
 import HomepageSectionEditor from "@/components/homepage/HomepageSectionEditor";
+import HomepagePromotionalBanners from "@/components/homepage-banners/HomepagePromotionalBanners";
 import CollectionBannerEditor from "@/components/collection-banners/CollectionBannerEditor";
 import { getHomepageSections } from "@/lib/admin/homepage/queries";
 import { getAdminCollectionBanners } from "@/lib/admin/collection-banners/queries";
@@ -136,6 +137,8 @@ export default async function AdminHomepagePage() {
           ))}
         </div>
       </section>
+      <HomepagePromotionalBanners />
+
     </main>
   );
 }
