@@ -28,3 +28,33 @@ export async function getAdminCollectionBanners(): Promise<CollectionBanner[]> {
 
   return (data ?? []) as CollectionBanner[];
 }
+
+
+export type CategoryBanner = {
+  id: string;
+  category_id: string;
+  image_url: string;
+  alt_text: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getAdminCategoryBanners(): Promise<CategoryBanner[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("category_banners")
+    .select(
+      "id, category_id, image_url, alt_text, is_active, created_at, updated_at"
+    )
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `Failed to load category banners: ${error.message}`
+    );
+  }
+
+  return (data ?? []) as CategoryBanner[];
+}

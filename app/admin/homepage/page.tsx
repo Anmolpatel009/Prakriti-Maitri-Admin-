@@ -1,13 +1,18 @@
 import HomepageSectionEditor from "@/components/homepage/HomepageSectionEditor";
 import HomepagePromotionalBanners from "@/components/homepage-banners/HomepagePromotionalBanners";
 import CollectionBannerEditor from "@/components/collection-banners/CollectionBannerEditor";
+import CategoryBannerEditor from "@/components/collection-banners/CategoryBannerEditor";
 import { getHomepageSections } from "@/lib/admin/homepage/queries";
-import { getAdminCollectionBanners } from "@/lib/admin/collection-banners/queries";
+import {
+  getAdminCollectionBanners,
+  getAdminCategoryBanners,
+} from "@/lib/admin/collection-banners/queries";
 
 export default async function AdminHomepagePage() {
-  const [sections, banners] = await Promise.all([
+  const [sections, banners, categoryBanners] = await Promise.all([
     getHomepageSections(),
     getAdminCollectionBanners(),
+    getAdminCategoryBanners(),
   ]);
 
   const editableKeys = [
@@ -23,6 +28,10 @@ export default async function AdminHomepagePage() {
 
   const bannerBySlot = new Map(
     banners.map((banner) => [banner.slot, banner])
+  );
+
+  const categoryBannerById = new Map(
+    categoryBanners.map((banner) => [banner.category_id, banner])
   );
 
   return (
@@ -137,6 +146,74 @@ export default async function AdminHomepagePage() {
           ))}
         </div>
       </section>
+      <section style={{ marginTop: 48 }}>
+        <div style={{ marginBottom: 24 }}>
+          <p
+            style={{
+              margin: "0 0 8px",
+              fontSize: 12,
+              letterSpacing: 1.5,
+              textTransform: "uppercase",
+            }}
+          >
+            Storefront Category CMS
+          </p>
+
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 28,
+              fontWeight: 600,
+            }}
+          >
+            Category Banners
+          </h2>
+
+          <p
+            style={{
+              maxWidth: 760,
+              color: "#666",
+              lineHeight: 1.6,
+              marginTop: 8,
+            }}
+          >
+            Manage the banners shared by the Shop homepage and
+            their corresponding category pages.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gap: 24,
+          }}
+        >
+          {[
+            {
+              id: "8bd95067-7374-45b4-9df4-d25aa03df3e3",
+              name: "Laptop Bags & Sleeves",
+              slug: "hand-bags",
+            },
+            {
+              id: "570f3633-51d7-4a1c-b39b-8ef25216db03",
+              name: "Hamper Bags",
+              slug: "hamper-bags",
+            },
+            {
+              id: "f547841f-a2b8-4445-b6ee-491f742459ec",
+              name: "Brands Packaging Bags",
+              slug: "packaging-bags",
+            },
+          ].map((category) => (
+            <CategoryBannerEditor
+              key={category.id}
+              category={category}
+              banner={categoryBannerById.get(category.id)}
+            />
+          ))}
+        </div>
+      </section>
+
       <HomepagePromotionalBanners />
 
     </main>
