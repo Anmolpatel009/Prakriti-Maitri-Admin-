@@ -41,6 +41,9 @@ export default async function EditProductPage({
           ...product,
           quantity: inventory?.quantity ?? 0,
           reservedQuantity: inventory?.reserved_quantity ?? 0,
+          images: Array.isArray(product.product_images)
+            ? product.product_images
+            : [],
         }}
         categories={categories}
         subcategories={subcategories}

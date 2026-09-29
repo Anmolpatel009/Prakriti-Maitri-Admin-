@@ -86,6 +86,13 @@ export async function getAdminProduct(id: string) {
       inventory (
         quantity,
         reserved_quantity
+      ),
+      product_images (
+        id,
+        image_url,
+        alt_text,
+        display_order,
+        created_at
       )
     `)
     .eq("id", id)
