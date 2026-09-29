@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import ProductImageManager, {
   ProductImage,
 } from "@/components/products/ProductImageManager";
+import ProductRemovalAction from "@/components/products/ProductRemovalAction";
 
 type Category = {
   id: string;
@@ -74,8 +75,6 @@ export default function ProductEditForm({
   const [quantity, setQuantity] = useState(
     String(product.quantity)
   );
-  const [isActive, setIsActive] = useState(product.is_active);
-
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -108,7 +107,6 @@ export default function ProductEditForm({
           ? Number(compareAtPrice)
           : null,
         sku: sku.trim() || null,
-        is_active: isActive,
       })
       .eq("id", product.id);
 
@@ -330,19 +328,12 @@ export default function ProductEditForm({
         </div>
       </section>
 
-      <section className="rounded-lg border bg-white p-6">
-        <label className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-
-          <span className="text-sm font-medium">
-            Product is active
-          </span>
-        </label>
-      </section>
+      <ProductRemovalAction
+        productId={product.id}
+        productName={product.name}
+        reservedQuantity={product.reservedQuantity}
+        images={product.images}
+      />
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
