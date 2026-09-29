@@ -3,6 +3,9 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ProductImageManager, {
+  ProductImage,
+} from "@/components/products/ProductImageManager";
 
 type Category = {
   id: string;
@@ -33,6 +36,7 @@ type Product = {
   is_active: boolean;
   quantity: number;
   reservedQuantity: number;
+  images: ProductImage[];
 };
 
 type Props = {
@@ -277,6 +281,13 @@ export default function ProductEditForm({
           </div>
         </div>
       </section>
+
+      <ProductImageManager
+        productId={product.id}
+        productName={product.name}
+        images={product.images}
+        disabled={saving}
+      />
 
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Inventory</h3>
