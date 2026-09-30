@@ -65,6 +65,7 @@ export async function getAdminBulkOrderEnquiry(id: string) {
       quantity,
       purpose,
       message,
+      reference_image_path,
       status,
       admin_notes,
       created_at,
@@ -88,8 +89,27 @@ export async function getAdminBulkOrderEnquiry(id: string) {
     );
   }
 
+  let referenceImageUrl: string | null = null;
+
+  if (data.reference_image_path) {
+    const { data: signedImage, error: signedImageError } =
+      await supabase.storage
+        .from("bulk-order-references")
+        .createSignedUrl(data.reference_image_path, 60 * 60);
+
+    if (signedImageError) {
+      console.error(
+        "Failed to create bulk enquiry reference image URL:",
+        signedImageError
+      );
+    } else {
+      referenceImageUrl = signedImage?.signedUrl ?? null;
+    }
+  }
+
   return {
     ...data,
+    referenceImageUrl,
     category: Array.isArray(data.categories)
       ? data.categories[0]
       : data.categories,

@@ -118,6 +118,34 @@ export default async function AdminBulkOrderDetailPage({
                 {enquiry.message ?? "—"}
               </p>
             </div>
+
+            <div>
+              <p className="text-gray-500">
+                Reference Image
+              </p>
+
+              {enquiry.referenceImageUrl ? (
+                <a
+                  href={enquiry.referenceImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block"
+                >
+                  <img
+                    src={enquiry.referenceImageUrl}
+                    alt="Customer reference"
+                    className="max-h-80 max-w-full rounded-lg border object-contain"
+                  />
+                  <span className="mt-2 block text-xs font-medium underline">
+                    Open full-size image
+                  </span>
+                </a>
+              ) : (
+                <p className="font-medium">
+                  No reference image
+                </p>
+              )}
+            </div>
           </div>
         </section>
       </div>
