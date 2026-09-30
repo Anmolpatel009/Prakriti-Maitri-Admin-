@@ -34,6 +34,7 @@ type Product = {
   price: number | string;
   compare_at_price: number | string | null;
   sku: string | null;
+  short_description: string | null;
   is_active: boolean;
   quantity: number;
   reservedQuantity: number;
@@ -62,6 +63,9 @@ export default function ProductEditForm({
   );
   const [name, setName] = useState(product.name);
   const [slug, setSlug] = useState(product.slug);
+  const [shortDescription, setShortDescription] = useState(
+    product.short_description ?? ""
+  );
   const [description, setDescription] = useState(
     product.description ?? ""
   );
@@ -101,6 +105,7 @@ export default function ProductEditForm({
         subcategory_id: subcategoryId || null,
         name: name.trim(),
         slug: slug.trim(),
+        short_description: shortDescription.trim() || null,
         description: description.trim() || null,
         price: Number(price),
         compare_at_price: compareAtPrice
@@ -177,6 +182,22 @@ export default function ProductEditForm({
               onChange={(e) => setSku(e.target.value)}
               className="w-full rounded-md border px-3 py-2"
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium">
+              Short description
+            </label>
+            <textarea
+              rows={3}
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="A concise customer-facing summary shown near the product title."
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Recommended: 120–180 characters.
+            </p>
           </div>
 
           <div className="md:col-span-2">

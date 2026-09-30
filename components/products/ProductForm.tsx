@@ -37,6 +37,7 @@ export default function ProductForm({
   const [subcategoryId, setSubcategoryId] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [compareAtPrice, setCompareAtPrice] = useState("");
@@ -88,12 +89,13 @@ export default function ProductForm({
      * The RPC returns the newly created product UUID.
      */
     const { data: productId, error: productError } =
-      await supabase.rpc("create_product_with_inventory", {
+      await supabase.rpc("create_product_with_inventory_with_short_description", {
         p_category_id: categoryId || null,
         p_subcategory_id: subcategoryId || null,
         p_name: name.trim(),
         p_slug: slug.trim(),
         p_description: description.trim() || null,
+        p_short_description: shortDescription.trim() || null,
         p_price: Number(price),
         p_compare_at_price: compareAtPrice
           ? Number(compareAtPrice)
@@ -262,6 +264,24 @@ export default function ProductForm({
               className="w-full rounded-md border px-3 py-2"
               placeholder="PM-JUTE-001"
             />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium">
+              Short description
+            </label>
+
+            <textarea
+              rows={3}
+              value={shortDescription}
+              onChange={(event) => setShortDescription(event.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="A concise customer-facing summary shown near the product title."
+            />
+
+            <p className="mt-1 text-xs text-gray-500">
+              Recommended: 120–180 characters.
+            </p>
           </div>
 
           <div className="md:col-span-2">
