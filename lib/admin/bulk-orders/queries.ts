@@ -91,20 +91,20 @@ export async function getAdminBulkOrderEnquiry(id: string) {
 
   let referenceImageUrl: string | null = null;
 
-  if (data.reference_image_path) {
-    const { data: signedImage, error: signedImageError } =
-      await supabase.storage
-        .from("bulk-order-references")
-        .createSignedUrl(data.reference_image_path, 60 * 60);
+  const bulkReferencePathPattern =
+    /^bulk-orders\/[0-9a-f-]{36}\.(jpg|png|webp)$/i;
 
-    if (signedImageError) {
-      console.error(
-        "Failed to create bulk enquiry reference image URL:",
-        signedImageError
-      );
-    } else {
-      referenceImageUrl = signedImage?.signedUrl ?? null;
-    }
+  if (
+    data.reference_image_path &&
+    bulkReferencePathPattern.test(data.reference_image_path)
+  ) {
+    const {
+      data: { publicUrl },
+    } = supabase.storage
+      .from("custom-bag-references")
+      .getPublicUrl(data.reference_image_path);
+
+    referenceImageUrl = publicUrl || null;
   }
 
   return {
