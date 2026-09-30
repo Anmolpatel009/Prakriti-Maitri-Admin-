@@ -37,7 +37,6 @@ export default function CategoryEditForm({
   const [description, setDescription] = useState(
     category.description ?? "",
   );
-  const [isActive, setIsActive] = useState(category.is_active);
 
   const [imageUrl, setImageUrl] = useState<string | null>(
     category.image_url ?? null,
@@ -48,6 +47,8 @@ export default function CategoryEditForm({
   );
 
   const [saving, setSaving] = useState(false);
+  const [hasSubcategories, setHasSubcategories] =
+    useState<boolean | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -61,6 +62,35 @@ export default function CategoryEditForm({
 
     return () => URL.revokeObjectURL(objectUrl);
   }, [imageFile, imageUrl]);
+
+  // CATEGORY_SUBCATEGORY_CHECK
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkSubcategories() {
+      const { data, error } = await supabase
+        .from("subcategories")
+        .select("id")
+        .eq("category_id", category.id)
+        .limit(1);
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("Category subcategory check error:", error);
+        setHasSubcategories(null);
+        return;
+      }
+
+      setHasSubcategories((data ?? []).length > 0);
+    }
+
+    checkSubcategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [category.id]);
 
   function handleImageChange(file: File | undefined) {
     if (!file) return;
@@ -78,6 +108,68 @@ export default function CategoryEditForm({
     }
 
     setImageFile(file);
+  }
+
+  async function handleRemoveCategory() {
+    setError("");
+
+    if (hasSubcategories === null) {
+      setError("Unable to verify subcategories right now. Please try again.");
+      return;
+    }
+
+    if (hasSubcategories) {
+      setError("This category has subcategories. Remove them first.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove "${category.name}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setSaving(true);
+
+    try {
+      // Final guard immediately before DELETE.
+      const {
+        data: currentSubcategories,
+        error: subcategoryError,
+      } = await supabase
+        .from("subcategories")
+        .select("id")
+        .eq("category_id", category.id)
+        .limit(1);
+
+      if (subcategoryError) {
+        throw new Error(subcategoryError.message);
+      }
+
+      if ((currentSubcategories ?? []).length > 0) {
+        setHasSubcategories(true);
+        throw new Error("This category has subcategories. Remove them first.");
+      }
+
+      const { error: deleteError } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", category.id);
+
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+
+      router.push("/admin/categories");
+      router.refresh();
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? `Could not remove category: ${removeError.message}`
+          : "Could not remove category."
+      );
+      setSaving(false);
+    }
   }
 
   async function uploadCategoryImage(file: File) {
@@ -135,7 +227,6 @@ export default function CategoryEditForm({
           slug: slug.trim(),
           description: description.trim() || null,
           image_url: finalImageUrl,
-          is_active: isActive,
           updated_at: new Date().toISOString(),
         })
         .eq("id", category.id);
@@ -257,22 +348,38 @@ export default function CategoryEditForm({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <input
-          id="is-active"
-          type="checkbox"
-          checked={isActive}
-          onChange={(event) => setIsActive(event.target.checked)}
-          className="h-4 w-4"
-        />
 
-        <label
-          htmlFor="is-active"
-          className="text-sm font-medium"
-        >
-          Active
-        </label>
-      </div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-5">
+          <h3 className="font-semibold text-red-700">
+            Remove Category
+          </h3>
+
+          {hasSubcategories === null ? (
+            <p className="mt-1 text-sm text-gray-600">
+              Checking subcategories...
+            </p>
+          ) : hasSubcategories ? (
+            <p className="mt-1 text-sm text-gray-600">
+              This category has subcategories. Remove all
+              subcategories first.
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-gray-600">
+                This category has no subcategories and can be removed.
+              </p>
+
+              <button
+                type="button"
+                onClick={handleRemoveCategory}
+                disabled={saving}
+                className="mt-4 rounded-md border border-red-300 bg-white px-5 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? "Removing..." : "Remove Category"}
+              </button>
+            </>
+          )}
+        </div>
 
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
