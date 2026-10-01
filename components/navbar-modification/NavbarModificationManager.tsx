@@ -31,6 +31,25 @@ type Props = {
 
 const NAVBAR_CUSTOMIZATION_KEY = "navbar_customization";
 
+const FONT_CHOICES = [
+  ["Georgia, serif", "Georgia"],
+  ["Times New Roman, serif", "Times New Roman"],
+  ["Palatino Linotype, Book Antiqua, Palatino, serif", "Palatino"],
+  ["Garamond, serif", "Garamond"],
+  ["Baskerville, serif", "Baskerville"],
+  ["Arial, sans-serif", "Arial"],
+  ["Helvetica, Arial, sans-serif", "Helvetica"],
+  ["Verdana, sans-serif", "Verdana"],
+  ["Trebuchet MS, sans-serif", "Trebuchet MS"],
+  ["Tahoma, sans-serif", "Tahoma"],
+  ["Arial Narrow, Arial, sans-serif", "Arial Narrow"],
+  ["Impact, fantasy", "Impact"],
+  ["Courier New, monospace", "Courier New"],
+  ["Lucida Console, monospace", "Lucida Console"],
+  ["system-ui, sans-serif", "System UI"],
+] as const;
+
+
 function itemLabel(
   item: NavbarItem,
   categories: Category[],
@@ -514,7 +533,7 @@ export default function NavbarModificationManager({
               Brand Font
             </span>
 
-            <input
+            <select
               value={config.brand_font_family}
               onChange={(event) =>
                 setConfig((current) => ({
@@ -523,7 +542,13 @@ export default function NavbarModificationManager({
                 }))
               }
               className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
-            />
+            >
+              {FONT_CHOICES.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block">

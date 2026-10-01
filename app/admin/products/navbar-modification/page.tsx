@@ -1,3 +1,4 @@
+import SiteAppearanceManager from "@/components/navbar-modification/SiteAppearanceManager";
 import NavbarModificationManager from "@/components/navbar-modification/NavbarModificationManager";
 import {
   getAdminCategories,
@@ -52,6 +53,8 @@ export default async function NavbarModificationPage() {
         categories={categories}
         subcategories={subcategories}
       />
+
+      <SiteAppearanceManager />
     </main>
   );
 }
