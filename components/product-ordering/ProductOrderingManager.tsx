@@ -41,8 +41,9 @@ type CollectionCard = {
   subcategory_id: string | null;
   heading: string;
   subheading: string;
-  font_family: "serif" | "sans" | "mono";
-  font_size: "small" | "medium" | "large" | "xlarge";
+  font_family: string;
+  font_size: string;
+  subheading_font_size?: string;
   font_style: "normal" | "italic";
   font_weight: "400" | "500" | "600" | "700";
   text_color: string;
@@ -71,8 +72,9 @@ function defaultCard(slot: number): CollectionCard {
     subcategory_id: null,
     heading: "",
     subheading: "",
-    font_family: "serif",
-    font_size: "large",
+    font_family: "Georgia, serif",
+    font_size: "28",
+    subheading_font_size: "18",
     font_style: "normal",
     font_weight: "600",
     text_color: "#111111",
@@ -615,40 +617,82 @@ export default function ProductOrderingManager({
                   />
 
                   <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={card.font_family}
-                      onChange={(
-                        event: React.ChangeEvent<HTMLSelectElement>
-                      ) =>
-                        updateCard(card.slot, {
-                          font_family:
-                            event.target.value as CollectionCard["font_family"],
-                        })
-                      }
-                      className="rounded-lg border px-2 py-2 text-sm"
-                    >
-                      <option value="serif">Serif</option>
-                      <option value="sans">Sans</option>
-                      <option value="mono">Mono</option>
-                    </select>
+                    <label className="text-xs text-gray-500">
+                      Font Family
+                      <select
+                        value={card.font_family}
+                        onChange={(
+                          event: React.ChangeEvent<HTMLSelectElement>
+                        ) =>
+                          updateCard(card.slot, {
+                            font_family: event.target.value,
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+                      >
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Times New Roman, serif">Times New Roman</option>
+                        <option value="Palatino Linotype, Book Antiqua, Palatino, serif">Palatino</option>
+                        <option value="Garamond, serif">Garamond</option>
+                        <option value="Baskerville, serif">Baskerville</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Helvetica, Arial, sans-serif">Helvetica</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                        <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                        <option value="Tahoma, sans-serif">Tahoma</option>
+                        <option value="Arial Narrow, Arial, sans-serif">Arial Narrow</option>
+                        <option value="Impact, fantasy">Impact</option>
+                        <option value="Courier New, monospace">Courier New</option>
+                        <option value="Lucida Console, monospace">Lucida Console</option>
+                        <option value="system-ui, sans-serif">System UI</option>
+                      </select>
+                    </label>
 
-                    <select
-                      value={card.font_size}
-                      onChange={(
-                        event: React.ChangeEvent<HTMLSelectElement>
-                      ) =>
-                        updateCard(card.slot, {
-                          font_size:
-                            event.target.value as CollectionCard["font_size"],
-                        })
-                      }
-                      className="rounded-lg border px-2 py-2 text-sm"
-                    >
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
-                      <option value="xlarge">XLarge</option>
-                    </select>
+                    <label className="text-xs text-gray-500">
+                      Heading Size
+                      <input
+                        type="number"
+                        min="16"
+                        max="72"
+                        value={
+                          /^\d+(\.\d+)?$/.test(card.font_size)
+                            ? card.font_size
+                            : card.font_size === "small"
+                              ? "20"
+                              : card.font_size === "medium"
+                                ? "24"
+                                : card.font_size === "xlarge"
+                                  ? "36"
+                                  : "28"
+                        }
+                        onChange={(
+                          event: React.ChangeEvent<HTMLInputElement>
+                        ) =>
+                          updateCard(card.slot, {
+                            font_size: event.target.value,
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+                      />
+                    </label>
+
+                    <label className="text-xs text-gray-500">
+                      Subheading Size
+                      <input
+                        type="number"
+                        min="10"
+                        max="40"
+                        value={card.subheading_font_size || "18"}
+                        onChange={(
+                          event: React.ChangeEvent<HTMLInputElement>
+                        ) =>
+                          updateCard(card.slot, {
+                            subheading_font_size: event.target.value,
+                          })
+                        }
+                        className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+                      />
+                    </label>
 
                     <select
                       value={card.font_style}
@@ -728,17 +772,21 @@ export default function ProductOrderingManager({
                       fontFamily:
                         card.font_family === "serif"
                           ? "Georgia, serif"
-                          : card.font_family === "mono"
-                            ? "ui-monospace, monospace"
-                            : "ui-sans-serif, sans-serif",
+                          : card.font_family === "sans"
+                            ? "ui-sans-serif, sans-serif"
+                            : card.font_family === "mono"
+                              ? "ui-monospace, monospace"
+                              : card.font_family,
                       fontSize:
-                        card.font_size === "small"
-                          ? 16
-                          : card.font_size === "medium"
+                        /^\d+(\.\d+)?$/.test(card.font_size)
+                          ? Number(card.font_size)
+                          : card.font_size === "small"
                             ? 20
-                            : card.font_size === "large"
-                              ? 26
-                              : 32,
+                            : card.font_size === "medium"
+                              ? 24
+                              : card.font_size === "xlarge"
+                                ? 36
+                                : 28,
                       fontStyle: card.font_style,
                       fontWeight: Number(card.font_weight),
                     }}
@@ -746,7 +794,12 @@ export default function ProductOrderingManager({
                     <div>
                       {card.heading || "Heading preview"}
                     </div>
-                    <div className="mt-1 text-sm opacity-70">
+                    <div
+                      className="mt-1 opacity-70"
+                      style={{
+                        fontSize: `${card.subheading_font_size || "18"}px`,
+                      }}
+                    >
                       {card.subheading ||
                         "Subheading preview"}
                     </div>
