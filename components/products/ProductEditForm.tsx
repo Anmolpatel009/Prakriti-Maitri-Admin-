@@ -38,6 +38,7 @@ type Product = {
   is_active: boolean;
   quantity: number;
   reservedQuantity: number;
+  minimum_order_quantity: number;
   images: ProductImage[];
 };
 
@@ -79,7 +80,11 @@ export default function ProductEditForm({
   const [quantity, setQuantity] = useState(
     String(product.quantity)
   );
+  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState(
+    String(product.minimum_order_quantity ?? 1)
+  );
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
 
   const filteredSubcategories = useMemo(
@@ -96,6 +101,7 @@ export default function ProductEditForm({
     event.preventDefault();
 
     setError("");
+    setSuccess("");
     setSaving(true);
 
     const { error: productError } = await supabase
@@ -112,6 +118,10 @@ export default function ProductEditForm({
           ? Number(compareAtPrice)
           : null,
         sku: sku.trim() || null,
+        minimum_order_quantity: Math.max(
+          1,
+          Math.floor(Number(minimumOrderQuantity))
+        ),
       })
       .eq("id", product.id);
 
@@ -134,7 +144,8 @@ export default function ProductEditForm({
       return;
     }
 
-    router.push("/admin/products");
+    setSaving(false);
+    setSuccess("Product changes saved successfully.");
     router.refresh();
   }
 
@@ -330,6 +341,25 @@ export default function ProductEditForm({
 
           <div>
             <label className="mb-1 block text-sm font-medium">
+              Minimum Order Quantity (MOQ)
+            </label>
+            <input
+              required
+              min="1"
+              step="1"
+              type="number"
+              value={minimumOrderQuantity}
+              onChange={(e) => setMinimumOrderQuantity(e.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+              placeholder="e.g. 10"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Customers cannot order less than this quantity.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
               Reserved
             </label>
 
@@ -362,6 +392,12 @@ export default function ProductEditForm({
         </div>
       )}
 
+      {success && (
+        <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          {success}
+        </div>
+      )}
+
       <div className="flex justify-end gap-3">
         <button
           type="button"
@@ -374,9 +410,11 @@ export default function ProductEditForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-black px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className={`rounded-md px-5 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+            success ? "bg-green-600" : "bg-black"
+          }`}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {success ? "Saved" : saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>

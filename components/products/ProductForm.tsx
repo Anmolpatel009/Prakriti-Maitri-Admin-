@@ -43,6 +43,7 @@ export default function ProductForm({
   const [compareAtPrice, setCompareAtPrice] = useState("");
   const [sku, setSku] = useState("");
   const [quantity, setQuantity] = useState("0");
+  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState("1");
   const [isActive, setIsActive] = useState(true);
 
   const [images, setImages] = useState<File[]>([]);
@@ -82,6 +83,17 @@ export default function ProductForm({
     setError("");
     setSaving(true);
 
+    const minimumOrderQuantityValue = Number(minimumOrderQuantity);
+
+    if (
+      !Number.isInteger(minimumOrderQuantityValue) ||
+      minimumOrderQuantityValue < 1
+    ) {
+      setError("MOQ must be a whole number of at least 1.");
+      setSaving(false);
+      return;
+    }
+
     /*
      * STEP 1
      * Create the product and inventory.
@@ -113,6 +125,21 @@ export default function ProductForm({
 
     if (!productId) {
       setError("Product could not be created.");
+      setSaving(false);
+      return;
+    }
+
+    const { error: minimumOrderQuantityError } = await supabase
+      .from("products")
+      .update({
+        minimum_order_quantity: minimumOrderQuantityValue,
+      })
+      .eq("id", productId);
+
+    if (minimumOrderQuantityError) {
+      setError(
+        `Product was created, but MOQ could not be saved: ${minimumOrderQuantityError.message}`
+      );
       setSaving(false);
       return;
     }
@@ -408,20 +435,45 @@ export default function ProductForm({
       <section className="rounded-lg border bg-white p-6">
         <h3 className="mb-5 font-semibold">Inventory</h3>
 
-        <div className="max-w-sm">
-          <label className="mb-1 block text-sm font-medium">
-            Initial quantity
-          </label>
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Initial quantity
+            </label>
 
-          <input
-            required
-            min="0"
-            step="1"
-            type="number"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
-            className="w-full rounded-md border px-3 py-2"
-          />
+            <input
+              required
+              min="0"
+              step="1"
+              type="number"
+              value={quantity}
+              onChange={(event) => setQuantity(event.target.value)}
+              className="w-full rounded-md border px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Minimum Order Quantity (MOQ)
+            </label>
+
+            <input
+              required
+              min="1"
+              step="1"
+              type="number"
+              value={minimumOrderQuantity}
+              onChange={(event) =>
+                setMinimumOrderQuantity(event.target.value)
+              }
+              placeholder="Enter minimum order quantity"
+              className="w-full rounded-md border px-3 py-2"
+            />
+
+            <p className="mt-1 text-xs text-gray-500">
+              Customers cannot order less than this quantity.
+            </p>
+          </div>
         </div>
       </section>
 
