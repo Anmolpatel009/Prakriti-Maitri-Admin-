@@ -51,6 +51,13 @@ export default async function AdminLayout({
             </a>
 
             <a
+              href="/admin/products/navbar-modification"
+              className="ml-3 block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            >
+              ↳ Navbar Modification
+            </a>
+
+            <a
               href="/admin/inventory"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >

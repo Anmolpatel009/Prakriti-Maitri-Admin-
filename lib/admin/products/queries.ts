@@ -85,6 +85,7 @@ export async function getAdminProduct(id: string) {
       compare_at_price,
       sku,
       is_active,
+      minimum_order_quantity,
       inventory (
         quantity,
         reserved_quantity
