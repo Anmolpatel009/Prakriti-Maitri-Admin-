@@ -152,6 +152,15 @@ export default function NavbarModificationManager({
     }));
   }
 
+  function removeItem(index: number) {
+    clearStatus();
+
+    setConfig((current) => ({
+      ...current,
+      items: current.items.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
   function moveItem(index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
 
@@ -330,7 +339,12 @@ export default function NavbarModificationManager({
         <div className="divide-y divide-gray-200">
           {config.items.map((item, index) => {
             const isFixed =
-              item.type === "bulk_orders";
+              item.type === "bulk_orders" ||
+              (item.type === "link" &&
+                (item.key === "new" || item.key === "reviews"));
+            const isRemovable =
+              item.type === "category" ||
+              item.type === "subcategory";
 
             return (
               <div
@@ -511,6 +525,17 @@ export default function NavbarModificationManager({
                   >
                     ↓
                   </button>
+
+                  {isRemovable && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="rounded border border-red-200 px-2 py-1 text-sm text-red-600 hover:bg-red-50"
+                      title="Remove item"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               </div>
             );
