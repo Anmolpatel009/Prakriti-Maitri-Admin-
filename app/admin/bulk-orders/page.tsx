@@ -111,6 +111,10 @@ export default async function AdminBulkOrdersPage() {
                   </th>
 
                   <th className="px-5 py-3 font-medium">
+                    Delivery
+                  </th>
+
+                  <th className="px-5 py-3 font-medium">
                     Status
                   </th>
 
@@ -172,6 +176,34 @@ export default async function AdminBulkOrdersPage() {
 
                     <td className="px-5 py-4">
                       {enquiry.purpose}
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="space-y-1">
+                        <p className="font-medium">
+                          {enquiry.delivery_timeline === "urgent"
+                            ? "Urgent"
+                            : enquiry.delivery_timeline === "within_7_days"
+                              ? "Within a week"
+                              : enquiry.delivery_timeline === "within_15_days"
+                                ? "Within 15 days"
+                                : enquiry.delivery_timeline === "flexible"
+                                  ? "Flexible"
+                                  : "—"}
+                        </p>
+
+                        {enquiry.delivery_pincode && (
+                          <p className="text-xs text-gray-500">
+                            PIN {enquiry.delivery_pincode}
+                          </p>
+                        )}
+
+                        {enquiry.bag_size && (
+                          <p className="text-xs text-gray-500">
+                            {enquiry.bag_size}
+                          </p>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-5 py-4">

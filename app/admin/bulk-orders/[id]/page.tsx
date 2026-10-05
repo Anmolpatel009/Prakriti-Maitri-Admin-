@@ -101,6 +101,44 @@ export default async function AdminBulkOrderDetailPage({
 
             <div>
               <p className="text-gray-500">
+                Expected Bag Size
+              </p>
+
+              <p className="font-medium">
+                {enquiry.bag_size ?? "—"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                Delivery Pincode
+              </p>
+
+              <p className="font-medium">
+                {enquiry.delivery_pincode ?? "—"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
+                When Needed
+              </p>
+
+              <p className="font-medium">
+                {enquiry.delivery_timeline === "urgent"
+                  ? "Urgent — as soon as possible"
+                  : enquiry.delivery_timeline === "within_7_days"
+                    ? "Within a week — 7 days"
+                    : enquiry.delivery_timeline === "within_15_days"
+                      ? "Within 15 days — 2 weeks"
+                      : enquiry.delivery_timeline === "flexible"
+                        ? "Flexible — more than 15 days"
+                        : "—"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-gray-500">
                 Purpose
               </p>
 
