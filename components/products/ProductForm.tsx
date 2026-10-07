@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ProductImageUploader from "@/components/products/ProductImageUploader";
@@ -21,32 +21,95 @@ type Subcategory = {
   display_order: number;
 };
 
+type CloneProductImage = {
+  image_url: string;
+  alt_text: string | null;
+  display_order: number | null;
+};
+
+type CloneProduct = {
+  id: string;
+  category_id: string | null;
+  subcategory_id: string | null;
+  name: string;
+  slug: string;
+  short_description: string | null;
+  description: string | null;
+  price: number | string;
+  compare_at_price: number | string | null;
+  sku: string | null;
+  is_active: boolean;
+  minimum_order_quantity: number | null;
+  inventory:
+    | { quantity: number; reserved_quantity: number }
+    | { quantity: number; reserved_quantity: number }[]
+    | null;
+  product_images: CloneProductImage[] | null;
+};
+
 type Props = {
   categories: Category[];
   subcategories: Subcategory[];
+  cloneProduct?: CloneProduct | null;
 };
 
 export default function ProductForm({
   categories,
   subcategories,
+  cloneProduct = null,
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
-  const [categoryId, setCategoryId] = useState("");
-  const [subcategoryId, setSubcategoryId] = useState("");
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [compareAtPrice, setCompareAtPrice] = useState("");
-  const [sku, setSku] = useState("");
-  const [quantity, setQuantity] = useState("0");
-  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState("1");
-  const [isActive, setIsActive] = useState(true);
+  const cloneInventory = Array.isArray(cloneProduct?.inventory)
+    ? cloneProduct.inventory[0]
+    : cloneProduct?.inventory;
+
+  const [categoryId, setCategoryId] = useState(
+    cloneProduct?.category_id ?? "",
+  );
+  const [subcategoryId, setSubcategoryId] = useState(
+    cloneProduct?.subcategory_id ?? "",
+  );
+  const [name, setName] = useState(
+    cloneProduct ? `${cloneProduct.name} (Copy)` : "",
+  );
+  const [slug, setSlug] = useState(
+    cloneProduct ? `${cloneProduct.slug}-copy` : "",
+  );
+  const [shortDescription, setShortDescription] = useState(
+    cloneProduct?.short_description ?? "",
+  );
+  const [description, setDescription] = useState(
+    cloneProduct?.description ?? "",
+  );
+  const [price, setPrice] = useState(
+    cloneProduct ? String(cloneProduct.price) : "",
+  );
+  const [compareAtPrice, setCompareAtPrice] = useState(
+    cloneProduct?.compare_at_price != null
+      ? String(cloneProduct.compare_at_price)
+      : "",
+  );
+  const [sku, setSku] = useState(
+    cloneProduct?.sku ? `${cloneProduct.sku}-COPY` : "",
+  );
+  const [quantity, setQuantity] = useState(
+    cloneInventory ? String(cloneInventory.quantity) : "0",
+  );
+  const [minimumOrderQuantity, setMinimumOrderQuantity] = useState(
+    cloneProduct?.minimum_order_quantity != null
+      ? String(cloneProduct.minimum_order_quantity)
+      : "1",
+  );
+  const [isActive, setIsActive] = useState(
+    cloneProduct?.is_active ?? true,
+  );
 
   const [images, setImages] = useState<File[]>([]);
+  const [cloneImagesLoading, setCloneImagesLoading] = useState(
+    Boolean(cloneProduct?.product_images?.length),
+  );
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -60,6 +123,101 @@ export default function ProductForm({
       ),
     [subcategories, categoryId]
   );
+
+  useEffect(() => {
+    const sourceImages = cloneProduct?.product_images ?? [];
+
+    if (!sourceImages?.length) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadCloneImages() {
+      setCloneImagesLoading(true);
+      setError("");
+
+      try {
+        const orderedImages = [...sourceImages]
+          .sort(
+            (a, b) =>
+              (a.display_order ?? Number.MAX_SAFE_INTEGER) -
+              (b.display_order ?? Number.MAX_SAFE_INTEGER),
+          )
+          .slice(0, 4);
+
+        const files = await Promise.all(
+          orderedImages.map(async (image, index) => {
+            const response = await fetch(image.image_url);
+
+            if (!response.ok) {
+              throw new Error(
+                `Failed to load clone image ${index + 1}.`,
+              );
+            }
+
+            const blob = await response.blob();
+            const allowedTypes = [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/gif",
+            ];
+
+            if (!allowedTypes.includes(blob.type)) {
+              throw new Error(
+                `Clone image ${index + 1} has an unsupported format.`,
+              );
+            }
+
+            if (blob.size > 5 * 1024 * 1024) {
+              throw new Error(
+                `Clone image ${index + 1} is larger than 5MB.`,
+              );
+            }
+
+            const extension =
+              blob.type === "image/png"
+                ? "png"
+                : blob.type === "image/webp"
+                  ? "webp"
+                  : blob.type === "image/gif"
+                    ? "gif"
+                    : "jpg";
+
+            return new File(
+              [blob],
+              `clone-image-${index + 1}.${extension}`,
+              { type: blob.type },
+            );
+          }),
+        );
+
+        if (!cancelled) {
+          setImages(files);
+        }
+      } catch (cloneImageError) {
+        if (!cancelled) {
+          setImages([]);
+          setError(
+            cloneImageError instanceof Error
+              ? cloneImageError.message
+              : "Failed to load the source product images.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setCloneImagesLoading(false);
+        }
+      }
+    }
+
+    loadCloneImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cloneProduct]);
 
   function makeSlug(value: string) {
     return value
@@ -79,6 +237,19 @@ export default function ProductForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (cloneProduct?.product_images?.length && cloneImagesLoading) {
+      setError("Clone images are still loading.");
+      return;
+    }
+
+    if (
+      cloneProduct?.product_images?.length &&
+      images.length === 0
+    ) {
+      setError("The source product images could not be loaded.");
+      return;
+    }
 
     setError("");
     setSaving(true);
@@ -425,6 +596,12 @@ export default function ProductForm({
       </section>
 
       {/* Product Images */}
+      {cloneProduct && cloneImagesLoading && (
+        <p className="mb-3 text-sm text-gray-500">
+          Loading images from the source product...
+        </p>
+      )}
+
       <ProductImageUploader
         value={images}
         onChange={setImages}
@@ -514,7 +691,11 @@ export default function ProductForm({
           disabled={saving}
           className="rounded-md bg-black px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {saving ? "Creating..." : "Create Product"}
+          {saving
+              ? "Creating..."
+              : cloneProduct
+                ? "Clone Product"
+                : "Create Product"}
         </button>
       </div>
     </form>

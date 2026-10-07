@@ -5,12 +5,43 @@ import {
   getAdminSubcategories,
 } from "@/lib/admin/categories/queries";
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    search?: string;
+    category?: string;
+    subcategory?: string;
+  }>;
+}) {
+  const params = await searchParams;
+
+  const search =
+    typeof params.search === "string" ? params.search.trim() : "";
+
+  const categoryId =
+    typeof params.category === "string" ? params.category : "";
+
+  const subcategoryId =
+    typeof params.subcategory === "string"
+      ? params.subcategory
+      : "";
+
   const [products, categories, subcategories] = await Promise.all([
-    getAdminProducts(),
+    getAdminProducts({
+      search,
+      categoryId,
+      subcategoryId,
+    }),
     getAdminCategories(),
     getAdminSubcategories(),
   ]);
+
+  const availableSubcategories = subcategories.filter(
+    (subcategory) =>
+      subcategory.is_active &&
+      (!categoryId || subcategory.category_id === categoryId),
+  );
 
   return (
     <div>
@@ -178,6 +209,108 @@ export default async function ProductsPage() {
       </section>
 
       {/* Products */}
+      {/* Product Search & Filters */}
+      <form
+        action="/admin/products"
+        method="get"
+        className="mb-4 rounded-lg border bg-white p-4"
+      >
+        <div className="grid gap-4 md:grid-cols-[2fr_1fr_1fr_auto]">
+          <div>
+            <label
+              htmlFor="admin-product-search"
+              className="mb-1 block text-sm font-medium"
+            >
+              Search product
+            </label>
+
+            <input
+              id="admin-product-search"
+              name="search"
+              type="search"
+              defaultValue={search}
+              placeholder="Search by product name or SKU"
+              className="w-full rounded-md border px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="admin-product-category"
+              className="mb-1 block text-sm font-medium"
+            >
+              Category
+            </label>
+
+            <select
+              id="admin-product-category"
+              name="category"
+              defaultValue={categoryId}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+            >
+              <option value="">All categories</option>
+
+              {categories
+                .filter((category) => category.is_active)
+                .map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="admin-product-subcategory"
+              className="mb-1 block text-sm font-medium"
+            >
+              Subcategory
+            </label>
+
+            <select
+              id="admin-product-subcategory"
+              name="subcategory"
+              defaultValue={subcategoryId}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              disabled={!categoryId}
+            >
+              <option value="">All subcategories</option>
+
+              {availableSubcategories.map((subcategory) => (
+                <option key={subcategory.id} value={subcategory.id}>
+                  {subcategory.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              type="submit"
+              className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Filter
+            </button>
+
+            {(search || categoryId || subcategoryId) && (
+              <Link
+                href="/admin/products"
+                className="rounded-md border px-4 py-2 text-sm font-medium text-gray-700"
+              >
+                Clear
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          Showing {products.length} matching product
+          {products.length === 1 ? "" : "s"}.
+        </p>
+      </form>
+
+
       <section>
         <div className="mb-4">
           <h3 className="font-semibold">Products</h3>
@@ -283,12 +416,20 @@ export default async function ProductsPage() {
                       </td>
 
                       <td className="px-5 py-4">
+                        <div className="flex items-center gap-4">
                         <Link
                           href={`/admin/products/${product.id}`}
                           className="font-medium underline"
                         >
                           Edit
                         </Link>
+                        <Link
+                          href={`/admin/products/new?clone=${product.id}`}
+                          className="text-sm font-medium text-gray-700 underline"
+                        >
+                          Clone
+                        </Link>
+                        </div>
                       </td>
                     </tr>
                   );

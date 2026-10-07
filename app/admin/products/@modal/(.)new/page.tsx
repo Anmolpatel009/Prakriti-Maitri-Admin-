@@ -1,11 +1,19 @@
+import Link from "next/link";
 import ProductForm from "@/components/products/ProductForm";
+import { getAdminProduct } from "@/lib/admin/products/queries";
 import {
   getAdminCategories,
   getAdminSubcategories,
 } from "@/lib/admin/categories/queries";
 
-export default async function NewProductModalPage() {
-  const [categories, subcategories] = await Promise.all([
+export default async function NewProductModalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clone?: string }>;
+}) {
+  const params = await searchParams;
+  const [cloneProduct, categories, subcategories] = await Promise.all([
+    params.clone ? getAdminProduct(params.clone) : Promise.resolve(null),
     getAdminCategories(),
     getAdminSubcategories(),
   ]);
@@ -28,18 +36,19 @@ export default async function NewProductModalPage() {
             </p>
           </div>
 
-          <a
+          <Link
             href="/admin/products"
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Close
-          </a>
+          </Link>
         </div>
 
         <div className="overflow-y-auto p-6">
           <ProductForm
             categories={categories}
             subcategories={subcategories}
+            cloneProduct={cloneProduct}
           />
         </div>
       </div>
