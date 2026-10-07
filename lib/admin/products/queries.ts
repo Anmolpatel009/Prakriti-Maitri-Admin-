@@ -1,9 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 
-export async function getAdminProducts() {
+type AdminProductFilters = {
+  search?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+};
+
+export async function getAdminProducts(
+  filters: AdminProductFilters = {},
+) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("products")
     .select(`
       id,
@@ -23,8 +31,31 @@ export async function getAdminProducts() {
         quantity,
         reserved_quantity
       )
-    `)
-    .order("created_at", { ascending: false });
+    `);
+
+  const search = filters.search?.trim();
+
+  if (search) {
+    const safeSearch = search
+      .replace(/[\\%_]/g, (value) => `\\${value}`)
+      .replace(/,/g, "\\,");
+
+    query = query.or(
+      `name.ilike.%${safeSearch}%,sku.ilike.%${safeSearch}%`,
+    );
+  }
+
+  if (filters.categoryId) {
+    query = query.eq("category_id", filters.categoryId);
+  }
+
+  if (filters.subcategoryId) {
+    query = query.eq("subcategory_id", filters.subcategoryId);
+  }
+
+  const { data, error } = await query.order("created_at", {
+    ascending: false,
+  });
 
   if (error) {
     throw new Error(`Failed to load products: ${error.message}`);

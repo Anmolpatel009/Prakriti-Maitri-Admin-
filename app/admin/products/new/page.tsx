@@ -1,7 +1,17 @@
-import { getAdminCategories, getAdminSubcategories } from "@/lib/admin/products/queries";
+import { getAdminProduct, getAdminCategories, getAdminSubcategories } from "@/lib/admin/products/queries";
 import ProductForm from "@/components/products/ProductForm";
 
-export default async function NewProductPage() {
+export default async function NewProductPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clone?: string }>;
+}) {
+  const params = await searchParams;
+
+  const cloneProduct = params.clone
+    ? await getAdminProduct(params.clone)
+    : null;
+
   const [categories, subcategories] = await Promise.all([
     getAdminCategories(),
     getAdminSubcategories(),
@@ -19,6 +29,7 @@ export default async function NewProductPage() {
       <ProductForm
         categories={categories}
         subcategories={subcategories}
+        cloneProduct={cloneProduct}
       />
     </div>
   );

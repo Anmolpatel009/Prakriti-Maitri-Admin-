@@ -7,12 +7,14 @@ import {
   getAdminCollectionBanners,
   getAdminCategoryBanners,
 } from "@/lib/admin/collection-banners/queries";
+import { getAdminCategories } from "@/lib/admin/categories/queries";
 
 export default async function AdminHomepagePage() {
-  const [sections, banners, categoryBanners] = await Promise.all([
+  const [sections, banners, categoryBanners, categories] = await Promise.all([
     getHomepageSections(),
     getAdminCollectionBanners(),
     getAdminCategoryBanners(),
+    getAdminCategories(),
   ]);
 
   const editableKeys = [
@@ -188,23 +190,7 @@ export default async function AdminHomepagePage() {
             gap: 24,
           }}
         >
-          {[
-            {
-              id: "8bd95067-7374-45b4-9df4-d25aa03df3e3",
-              name: "Laptop Bags & Sleeves",
-              slug: "hand-bags",
-            },
-            {
-              id: "570f3633-51d7-4a1c-b39b-8ef25216db03",
-              name: "Hamper Bags",
-              slug: "hamper-bags",
-            },
-            {
-              id: "f547841f-a2b8-4445-b6ee-491f742459ec",
-              name: "Brands Packaging Bags",
-              slug: "packaging-bags",
-            },
-          ].map((category) => (
+          {categories.map((category) => (
             <CategoryBannerEditor
               key={category.id}
               category={category}
