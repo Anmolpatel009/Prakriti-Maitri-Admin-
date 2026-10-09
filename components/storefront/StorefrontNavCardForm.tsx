@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -119,8 +121,8 @@ export default function StorefrontNavCardForm({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be 5MB or smaller.");
+    if (file.size > 25 * 1024 * 1024) {
+      setError("Source image must be 25MB or smaller.");
       event.target.value = "";
       setImageFile(null);
       return;
@@ -207,17 +209,19 @@ export default function StorefrontNavCardForm({
       let imageUrl: string | null = null;
 
       if (imageFile) {
+        const optimizedImageFile = await prepareImageForUpload(imageFile, "navigation");
         const extension =
-          imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+          optimizedImageFile.name.split(".").pop()?.toLowerCase() || "jpg";
 
         const filePath =
           `storefront/nav-cards/${card.id}/${Date.now()}.${extension}`;
 
         const { error: uploadError } = await supabase.storage
           .from("product-images")
-          .upload(filePath, imageFile, {
+          .upload(filePath, optimizedImageFile, {
             cacheControl: "3600",
             upsert: false,
+            contentType: optimizedImageFile.type,
           });
 
         if (uploadError) {

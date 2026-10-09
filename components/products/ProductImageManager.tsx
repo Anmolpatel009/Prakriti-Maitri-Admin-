@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { ChangeEvent, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -112,6 +114,7 @@ export default function ProductImageManager({
   }
 
   async function uploadFile(file: File) {
+    file = await prepareImageForUpload(file, "product");
     validateFile(file);
 
     const extension = getExtension(file);

@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { ChangeEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -22,7 +24,7 @@ type Props = {
   banner?: CategoryBanner;
 };
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024;
 
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -83,8 +85,8 @@ export default function CategoryBannerEditor({
       return;
     }
 
-    if (file.size > MAX_IMAGE_SIZE) {
-      setMessage("Image must be smaller than 5MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      setMessage("Image must be smaller than 25MB.");
       event.target.value = "";
       return;
     }
@@ -92,15 +94,15 @@ export default function CategoryBannerEditor({
     setUploading(true);
 
     try {
-      const path =
-        `categories/banners/${category.slug}/${Date.now()}.${getExtension(file)}`;
+      const optimizedFile = await prepareImageForUpload(file, "banner");
+      const path = `categories/banners/${category.slug}/${Date.now()}.${getExtension(optimizedFile)}`;
 
       const { error: uploadError } = await supabase.storage
         .from("storefront-media")
-        .upload(path, file, {
+        .upload(path, optimizedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type,
+          contentType: optimizedFile.type,
         });
 
       if (uploadError) {
@@ -358,7 +360,7 @@ export default function CategoryBannerEditor({
             color: "#6b7280",
           }}
         >
-          JPG, PNG or WebP · Maximum 5MB
+          JPG, PNG or WebP · Source up to 25 MB; optimized upload up to 5 MB
         </span>
       </div>
 

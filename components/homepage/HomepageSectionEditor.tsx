@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -53,8 +55,8 @@ export default function HomepageSectionEditor({ section }: Props) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image must be smaller than 5MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      setMessage("Image must be smaller than 25MB.");
       return;
     }
 
@@ -62,15 +64,16 @@ export default function HomepageSectionEditor({ section }: Props) {
     setMessage("");
 
     try {
-      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const optimizedFile = await prepareImageForUpload(file, "content");
+      const extension = optimizedFile.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `homepage/${section.id}/${Date.now()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("storefront-media")
-        .upload(path, file, {
+        .upload(path, optimizedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type,
+          contentType: optimizedFile.type,
         });
 
       if (uploadError) {
@@ -90,8 +93,8 @@ export default function HomepageSectionEditor({ section }: Props) {
           title: section.title || section.section_key,
           file_url: publicUrl,
           alt_text: section.title || section.section_key,
-          mime_type: file.type,
-          file_size: file.size,
+          mime_type: optimizedFile.type,
+          file_size: optimizedFile.size,
           is_active: true,
         })
         .select("id")
