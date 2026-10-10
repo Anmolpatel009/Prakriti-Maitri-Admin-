@@ -4,7 +4,7 @@ type WeddingEnquiry = {
   id: string;
   bride_name: string;
   groom_name: string;
-  wedding_date: string | null;
+  contact_number: string | null;
   guest_range: string;
   gift_choice: string;
   status: string;
@@ -25,7 +25,7 @@ export default async function WeddingReturnGiftEnquiriesPage() {
   const db = supabase as any;
   const { data, error } = await db
     .from("wedding_return_gift_enquiries")
-    .select("id, bride_name, groom_name, wedding_date, guest_range, gift_choice, status, admin_notes, created_at")
+    .select("id, bride_name, groom_name, contact_number, guest_range, gift_choice, status, admin_notes, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -70,7 +70,7 @@ export default async function WeddingReturnGiftEnquiriesPage() {
               <thead className="border-b bg-gray-50">
                 <tr>
                   <th className="px-5 py-3 font-medium">Couple</th>
-                  <th className="px-5 py-3 font-medium">Wedding date</th>
+                  <th className="px-5 py-3 font-medium">Contact number</th>
                   <th className="px-5 py-3 font-medium">Guest range</th>
                   <th className="px-5 py-3 font-medium">Return gift</th>
                   <th className="px-5 py-3 font-medium">Submitted</th>
@@ -81,7 +81,7 @@ export default async function WeddingReturnGiftEnquiriesPage() {
                 {enquiries.map((enquiry) => (
                   <tr key={enquiry.id} className="align-top hover:bg-gray-50">
                     <td className="px-5 py-4 font-medium">{enquiry.bride_name} &amp; {enquiry.groom_name}</td>
-                    <td className="px-5 py-4">{enquiry.wedding_date ? new Date(`${enquiry.wedding_date}T00:00:00`).toLocaleDateString("en-IN") : "Not specified"}</td>
+                    <td className="px-5 py-4 whitespace-nowrap">{enquiry.contact_number || "Not provided"}</td>
                     <td className="px-5 py-4">{enquiry.guest_range}</td>
                     <td className="px-5 py-4">{enquiry.gift_choice}</td>
                     <td className="px-5 py-4 whitespace-nowrap">{new Date(enquiry.created_at).toLocaleString("en-IN")}</td>

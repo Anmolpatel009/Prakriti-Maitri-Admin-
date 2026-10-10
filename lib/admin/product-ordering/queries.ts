@@ -21,7 +21,7 @@ export type MerchandisingConfig = {
 };
 
 export const defaultMerchandisingConfig: MerchandisingConfig = {
-  collectionCards: [1, 2, 3].map((slot) => ({
+  collectionCards: [1, 2, 3, 4, 5, 6].map((slot) => ({
     slot,
     collection_type: "category",
     category_id: null,
