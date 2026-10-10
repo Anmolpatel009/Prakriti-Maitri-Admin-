@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/admin/auth";
 
@@ -22,103 +23,124 @@ export default async function AdminLayout({
 
         <nav className="p-4">
           <div className="space-y-1">
-            <a
+            <Link
               href="/admin"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Dashboard
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/products"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Products
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/products/ordering"
               className="ml-3 block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
             >
               ↳ Product Ordering
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/products/product-card-modification"
               className="ml-3 block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
             >
               ↳ Product Card Modification
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/products/navbar-modification"
               className="ml-3 block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
             >
               ↳ Navbar Modification
-            </a>
+            </Link>
 
-            <a
+<Link
+              href="/admin/products/announcements"
+              className="ml-3 block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+            >
+              &#x21B3; Announcements
+            </Link>
+
+
+            <Link
               href="/admin/inventory"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Inventory
-            </a>
+            </Link>
 
-            <a
+            <Link
+              href="/admin/extra-charges"
+              className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Extra Charges &amp; Promos
+            </Link>
+
+            <Link
               href="/admin/orders"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Orders
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/customers"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Customers
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/bulk-orders"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Bulk Order Enquiries
-            </a>
-            <a
+            </Link>
+            <Link
+              href="/admin/wedding-return-gifts"
+              className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+            >
+              Wedding Return Gift Enquiries
+            </Link>
+            <Link
               href="/admin/custom-bags"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Custom Bags
-            </a>
+            </Link>
 
-            <a href="/admin/homepage">Homepage</a>
-<a
+            <Link href="/admin/homepage">Homepage</Link>
+<Link
               href="/admin/media"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Media
-            </a><a
+            </Link><Link
               href="/admin/storefront"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Storefront
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin/alerts"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Alerts
-            </a>
+            </Link>
           </div>
 
           <div className="mt-8 border-t pt-4">
-            <a
+            <Link
               href="/admin/settings"
               className="block rounded-md px-3 py-2 text-sm hover:bg-gray-100"
             >
               Settings
-            </a>
+            </Link>
           </div>
         </nav>
       </aside>

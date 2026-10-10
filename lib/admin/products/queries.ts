@@ -138,3 +138,58 @@ export async function getAdminProduct(id: string) {
 
   return data;
 }
+
+export async function getAdminProductSuggestions(searchTerm: string) {
+  const supabase = await createClient();
+  const search = searchTerm.trim();
+
+  if (search.length < 2 || search.length > 100) {
+    return [];
+  }
+
+  const safeSearch = search
+    .replace(/[\\%_]/g, (value) => `\\${value}`)
+    .replace(/,/g, "\\,");
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, sku")
+    .or(`name.ilike.%${safeSearch}%,sku.ilike.%${safeSearch}%`)
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (error) {
+    throw new Error(`Failed to load product suggestions: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+export async function getAdminProductCatalogCountRows() {
+  const supabase = await createClient();
+  const pageSize = 1000;
+  const rows: {
+    id: string;
+    category_id: string | null;
+    subcategory_id: string | null;
+  }[] = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, category_id, subcategory_id")
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error(`Failed to load product catalog counts: ${error.message}`);
+    }
+
+    const batch = data ?? [];
+    rows.push(...batch);
+
+    if (batch.length < pageSize) break;
+  }
+
+  return rows;
+}

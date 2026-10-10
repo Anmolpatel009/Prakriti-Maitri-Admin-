@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { getAdminProducts } from "@/lib/admin/products/queries";
+import {
+  getAdminProductCatalogCountRows,
+  getAdminProducts,
+} from "@/lib/admin/products/queries";
+import ProductSearchInput from "@/components/products/ProductSearchInput";
+import ProductCatalogFilters from "@/components/products/ProductCatalogFilters";
 import {
   getAdminCategories,
   getAdminSubcategories,
@@ -12,6 +17,7 @@ export default async function ProductsPage({
     search?: string;
     category?: string;
     subcategory?: string;
+    limit?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -27,7 +33,16 @@ export default async function ProductsPage({
       ? params.subcategory
       : "";
 
-  const [products, categories, subcategories] = await Promise.all([
+  const requestedLimit =
+    typeof params.limit === "string"
+      ? Number.parseInt(params.limit, 10)
+      : 10;
+  const visibleLimit =
+    Number.isSafeInteger(requestedLimit) && requestedLimit > 0
+      ? requestedLimit
+      : 10;
+
+  const [products, categories, subcategories, catalogProductRows] = await Promise.all([
     getAdminProducts({
       search,
       categoryId,
@@ -35,13 +50,36 @@ export default async function ProductsPage({
     }),
     getAdminCategories(),
     getAdminSubcategories(),
+    getAdminProductCatalogCountRows(),
   ]);
 
-  const availableSubcategories = subcategories.filter(
-    (subcategory) =>
-      subcategory.is_active &&
-      (!categoryId || subcategory.category_id === categoryId),
-  );
+  const visibleProducts = products.slice(0, visibleLimit);
+  const hasMoreProducts = visibleProducts.length < products.length;
+  const nextVisibleLimit = Math.min(visibleLimit + 10, products.length);
+  const viewMoreParams = new URLSearchParams();
+  if (search) viewMoreParams.set("search", search);
+  if (categoryId) viewMoreParams.set("category", categoryId);
+  if (subcategoryId) viewMoreParams.set("subcategory", subcategoryId);
+  viewMoreParams.set("limit", String(nextVisibleLimit));
+
+  const categoryProductCounts = new Map<string, number>();
+  const subcategoryProductCounts = new Map<string, number>();
+
+  for (const product of catalogProductRows) {
+    if (product.category_id) {
+      categoryProductCounts.set(
+        product.category_id,
+        (categoryProductCounts.get(product.category_id) ?? 0) + 1,
+      );
+    }
+
+    if (product.subcategory_id) {
+      subcategoryProductCounts.set(
+        product.subcategory_id,
+        (subcategoryProductCounts.get(product.subcategory_id) ?? 0) + 1,
+      );
+    }
+  }
 
   return (
     <div>
@@ -70,6 +108,24 @@ export default async function ProductsPage({
           </Link>
         </div>
       </div>
+
+      <section className="mb-8 grid gap-4 sm:grid-cols-3" aria-label="Catalog summary">
+        <div className="rounded-lg border bg-white p-5">
+          <p className="text-sm text-gray-500">Total categories</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{categories.length}</p>
+          <p className="mt-1 text-xs text-gray-500">Active and inactive categories</p>
+        </div>
+        <div className="rounded-lg border bg-white p-5">
+          <p className="text-sm text-gray-500">Total subcategories</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{subcategories.length}</p>
+          <p className="mt-1 text-xs text-gray-500">Across all categories</p>
+        </div>
+        <div className="rounded-lg border bg-white p-5">
+          <p className="text-sm text-gray-500">Total products</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{catalogProductRows.length}</p>
+          <p className="mt-1 text-xs text-gray-500">Across the full catalog</p>
+        </div>
+      </section>
 
       {/* Categories & Subcategories */}
       <section className="mb-8 rounded-lg border bg-white">
@@ -100,7 +156,7 @@ export default async function ProductsPage({
               <div key={category.id} className="px-6 py-5">
                 {/* Category */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div>
                       <div className="font-medium">
                         {category.name}
@@ -119,6 +175,12 @@ export default async function ProductsPage({
                       }`}
                     >
                       {category.is_active ? "Active" : "Inactive"}
+                    </span>
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                      {categoryProductCounts.get(category.id) ?? 0} products
+                    </span>
+                    <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                      {categorySubcategories.length} subcategories
                     </span>
                   </div>
 
@@ -175,6 +237,9 @@ export default async function ProductsPage({
                                 : "Inactive"}
                             </span>
 
+                            <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                              {subcategoryProductCounts.get(subcategory.id) ?? 0} products
+                            </span>
                             <Link
                            href={`/admin/categories/${category.id}/subcategories/${subcategory.id}`}
                               className="text-sm font-medium underline"
@@ -211,7 +276,7 @@ export default async function ProductsPage({
       {/* Products */}
       {/* Product Search & Filters */}
       <form
-        action="/admin/products"
+        action="/admin/products#product-list"
         method="get"
         className="mb-4 rounded-lg border bg-white p-4"
       >
@@ -224,66 +289,17 @@ export default async function ProductsPage({
               Search product
             </label>
 
-            <input
-              id="admin-product-search"
-              name="search"
-              type="search"
-              defaultValue={search}
-              placeholder="Search by product name or SKU"
-              className="w-full rounded-md border px-3 py-2 text-sm"
-            />
+            <ProductSearchInput defaultValue={search} />
           </div>
 
-          <div>
-            <label
-              htmlFor="admin-product-category"
-              className="mb-1 block text-sm font-medium"
-            >
-              Category
-            </label>
+          <ProductCatalogFilters
+            categories={categories}
+            subcategories={subcategories}
+            selectedCategoryId={categoryId}
+            selectedSubcategoryId={subcategoryId}
+          />
 
-            <select
-              id="admin-product-category"
-              name="category"
-              defaultValue={categoryId}
-              className="w-full rounded-md border px-3 py-2 text-sm"
-            >
-              <option value="">All categories</option>
 
-              {categories
-                .filter((category) => category.is_active)
-                .map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="admin-product-subcategory"
-              className="mb-1 block text-sm font-medium"
-            >
-              Subcategory
-            </label>
-
-            <select
-              id="admin-product-subcategory"
-              name="subcategory"
-              defaultValue={subcategoryId}
-              className="w-full rounded-md border px-3 py-2 text-sm"
-              disabled={!categoryId}
-            >
-              <option value="">All subcategories</option>
-
-              {availableSubcategories.map((subcategory) => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name}
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div className="flex items-end gap-2">
             <button
@@ -305,13 +321,13 @@ export default async function ProductsPage({
         </div>
 
         <p className="mt-3 text-xs text-gray-500">
-          Showing {products.length} matching product
+          Found {products.length} matching product
           {products.length === 1 ? "" : "s"}.
         </p>
       </form>
 
 
-      <section>
+      <section id="product-list">
         <div className="mb-4">
           <h3 className="font-semibold">Products</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -351,7 +367,7 @@ export default async function ProductsPage({
               </thead>
 
               <tbody className="divide-y">
-                {products.map((product) => {
+                {visibleProducts.map((product) => {
                   const inventory = Array.isArray(product.inventory)
                     ? product.inventory[0]
                     : product.inventory;
@@ -448,6 +464,20 @@ export default async function ProductsPage({
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-gray-600">
+            Showing {visibleProducts.length} of {products.length} matching product{products.length === 1 ? "" : "s"}.
+          </p>
+          {hasMoreProducts && (
+            <Link
+              href={`/admin/products?${viewMoreParams.toString()}#product-list`}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              View more
+            </Link>
+          )}
         </div>
       </section>
     </div>
