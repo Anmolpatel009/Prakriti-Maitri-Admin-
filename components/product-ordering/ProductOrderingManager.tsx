@@ -110,7 +110,7 @@ export default function ProductOrderingManager({
       ? config.collectionCards
       : [];
 
-    return [1, 2, 3].map((slot: number) => {
+    return [1, 2, 3, 4, 5, 6].map((slot: number) => {
       const found = saved.find(
         (card: CollectionCard) => card.slot === slot
       );
@@ -518,7 +518,7 @@ export default function ProductOrderingManager({
             Homepage Collection Cards
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Configure exactly three collection cards.
+            Configure up to six collection cards. Existing cards are preserved.
           </p>
         </div>
 
