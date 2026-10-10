@@ -99,6 +99,7 @@ export default function ProductOrderingManager({
   );
 
   const [search, setSearch] = useState<string>("");
+  const [visibleCount, setVisibleCount] = useState<number>(10);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -172,6 +173,9 @@ export default function ProductOrderingManager({
       return matchesSearch && matchesCategory && matchesSubcategory;
     });
   }, [ordered, search, categoryFilter, subcategoryFilter]);
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const hasMoreProducts = visibleProducts.length < filteredProducts.length;
 
   function handleDrop(targetId: string): void {
     if (!draggedId || draggedId === targetId) return;
@@ -366,9 +370,10 @@ export default function ProductOrderingManager({
         <div className="mb-5 grid gap-3 md:grid-cols-4">
           <input
             value={search}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-              setSearch(event.target.value)
-            }
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              setSearch(event.target.value);
+              setVisibleCount(10);
+            }}
             placeholder="Search products or SKU..."
             className="rounded-lg border px-3 py-2 text-sm"
           />
@@ -378,6 +383,7 @@ export default function ProductOrderingManager({
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
               setCategoryFilter(event.target.value);
               setSubcategoryFilter("");
+              setVisibleCount(10);
             }}
             className="rounded-lg border px-3 py-2 text-sm"
           >
@@ -391,9 +397,10 @@ export default function ProductOrderingManager({
 
           <select
             value={subcategoryFilter}
-            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-              setSubcategoryFilter(event.target.value)
-            }
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+              setSubcategoryFilter(event.target.value);
+              setVisibleCount(10);
+            }}
             className="rounded-lg border px-3 py-2 text-sm"
           >
             <option value="">All Subcategories</option>
@@ -421,7 +428,7 @@ export default function ProductOrderingManager({
         </div>
 
         <div className="overflow-hidden rounded-xl border">
-          {filteredProducts.map((product: Product) => {
+          {visibleProducts.map((product: Product) => {
             const image = [...(product.product_images ?? [])].sort(
               (a: ProductImage, b: ProductImage) =>
                 a.display_order - b.display_order
@@ -483,6 +490,23 @@ export default function ProductOrderingManager({
             </div>
           )}
         </div>
+
+        {filteredProducts.length > 0 && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              Showing {visibleProducts.length} of {filteredProducts.length} matching products.
+            </p>
+            {hasMoreProducts && (
+              <button
+                type="button"
+                onClick={() => setVisibleCount((current) => Math.min(current + 10, filteredProducts.length))}
+                className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                View more
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border bg-white p-6 shadow-sm">
