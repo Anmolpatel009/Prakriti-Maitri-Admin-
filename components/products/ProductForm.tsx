@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -170,9 +172,9 @@ export default function ProductForm({
               );
             }
 
-            if (blob.size > 5 * 1024 * 1024) {
+            if (blob.size > 25 * 1024 * 1024) {
               throw new Error(
-                `Clone image ${index + 1} is larger than 5MB.`,
+                `Clone image ${index + 1} exceeds the 25MB source-image limit.`,
               );
             }
 
@@ -323,7 +325,7 @@ export default function ProductForm({
 
     try {
       for (let index = 0; index < images.length; index++) {
-        const file = images[index];
+        const file = await prepareImageForUpload(images[index], "product");
 
         const extension =
           file.name.split(".").pop()?.toLowerCase() || "jpg";

@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -60,8 +62,8 @@ export default function CollectionBannerEditor({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image must be smaller than 5MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      setMessage("Source image must be smaller than 25MB.");
       return;
     }
 
@@ -69,18 +71,18 @@ export default function CollectionBannerEditor({
     setMessage("");
 
     try {
-      const extension =
-        file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const optimizedFile = await prepareImageForUpload(file, "banner");
+      const extension = optimizedFile.name.split(".").pop()?.toLowerCase() || "jpg";
 
       const path =
         `collections/banners/slot-${slot}/${Date.now()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("storefront-media")
-        .upload(path, file, {
+        .upload(path, optimizedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type,
+          contentType: optimizedFile.type,
         });
 
       if (uploadError) {
@@ -349,7 +351,7 @@ export default function CollectionBannerEditor({
             color: "#6b7280",
           }}
         >
-          JPG, PNG or WebP · Maximum 5MB
+          JPG, PNG or WebP · Source up to 25 MB; optimized upload up to 5 MB
         </span>
 
         <span

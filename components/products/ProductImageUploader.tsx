@@ -9,7 +9,7 @@ type Props = {
 };
 
 const MAX_IMAGES = 4;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -53,7 +53,7 @@ export default function ProductImageUploader({
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        alert(`${file.name} is larger than 5MB.`);
+        alert(`${file.name} is larger than 25MB.`);
         continue;
       }
 
@@ -90,8 +90,7 @@ export default function ProductImageUploader({
         <h3 className="font-semibold">Product Images</h3>
 
         <p className="mt-1 text-sm text-gray-500">
-          Upload up to 4 images. JPG, PNG, WebP, or GIF. Maximum 5MB
-          each.
+          Upload up to 4 images. JPG, PNG, WebP, or GIF. Maximum 25MB per source image; optimized uploads must be 5MB or less.
         </p>
       </div>
 

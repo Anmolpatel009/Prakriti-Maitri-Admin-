@@ -1,10 +1,12 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_SOURCE_IMAGE_SIZE = 25 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
 const IMAGE_TYPES = [
@@ -42,12 +44,12 @@ export default function MediaUploader() {
       return;
     }
 
-    const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
+    const maxSize = isImage ? MAX_SOURCE_IMAGE_SIZE : MAX_VIDEO_SIZE;
 
     if (selected.size > maxSize) {
       setMessage(
         isImage
-          ? "Images must be 5MB or smaller."
+          ? "Source images must be 25MB or smaller; optimized uploads must be 5MB or smaller."
           : "Videos must be 100MB or smaller."
       );
       return;
@@ -76,11 +78,14 @@ export default function MediaUploader() {
         ? "video"
         : "image";
 
-      const extension =
-        file.name.split(".").pop()?.toLowerCase() || "bin";
+      const uploadFile = mediaType === "image"
+        ? await prepareImageForUpload(file, "content")
+        : file;
+
+      const extension = uploadFile.name.split(".").pop()?.toLowerCase() || "bin";
 
       const safeName =
-        file.name
+        uploadFile.name
           .replace(/\.[^/.]+$/, "")
           .replace(/[^a-zA-Z0-9-_]/g, "-")
           .slice(0, 80) || "media";
@@ -89,10 +94,10 @@ export default function MediaUploader() {
 
       const { error: uploadError } = await supabase.storage
         .from("storefront-media")
-        .upload(path, file, {
+        .upload(path, uploadFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type,
+          contentType: uploadFile.type,
         });
 
       if (uploadError) {
@@ -112,8 +117,8 @@ export default function MediaUploader() {
           title: title.trim(),
           file_url: fileUrl,
           alt_text: altText.trim() || null,
-          mime_type: file.type,
-          file_size: file.size,
+          mime_type: uploadFile.type,
+          file_size: uploadFile.size,
           is_active: true,
         });
 

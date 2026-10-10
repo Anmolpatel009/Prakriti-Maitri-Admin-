@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -72,8 +74,8 @@ export default function HomepageBannerEditor({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage("Image must be smaller than 5MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      setMessage("Image must be smaller than 25MB.");
       return;
     }
 
@@ -81,8 +83,8 @@ export default function HomepageBannerEditor({
     setMessage("");
 
     try {
-      const extension =
-        file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const optimizedFile = await prepareImageForUpload(file, "banner");
+      const extension = optimizedFile.name.split(".").pop()?.toLowerCase() || "jpg";
 
       const path =
         `homepage/banners/slot-${slot}/${Date.now()}.${extension}`;
@@ -90,10 +92,10 @@ export default function HomepageBannerEditor({
       const { error: uploadError } =
         await supabase.storage
           .from("storefront-media")
-          .upload(path, file, {
+          .upload(path, optimizedFile, {
             cacheControl: "3600",
             upsert: false,
-            contentType: file.type,
+            contentType: optimizedFile.type,
           });
 
       if (uploadError) {

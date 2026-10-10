@@ -1,10 +1,12 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/utils/prepare-image-for-upload";
+
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024;
 
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -53,7 +55,7 @@ export default function CategoryForm() {
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setError("Image size must be 5 MB or less.");
+      setError("Source image must be 25 MB or less; optimized upload limit is 5 MB.");
       return;
     }
 
@@ -125,19 +127,20 @@ export default function CategoryForm() {
 
       // 2. Upload category image if one was selected.
       if (imageFile) {
+        const optimizedImageFile = await prepareImageForUpload(imageFile, "category");
         const extension =
-          imageFile.type === "image/jpeg"
+          optimizedImageFile.type === "image/jpeg"
             ? "jpg"
-            : imageFile.type.split("/")[1];
+            : optimizedImageFile.name.split(".").pop()?.toLowerCase() || "webp";
 
         const path = `categories/${createdCategoryId}/${Date.now()}.${extension}`;
 
         const { error: uploadError } = await supabase.storage
           .from("product-images")
-          .upload(path, imageFile, {
+          .upload(path, optimizedImageFile, {
             cacheControl: "3600",
             upsert: false,
-            contentType: imageFile.type,
+            contentType: optimizedImageFile.type,
           });
 
         if (uploadError) {
@@ -279,7 +282,7 @@ export default function CategoryForm() {
           />
 
           <p className="mt-2 text-xs text-gray-500">
-            JPG, PNG, WebP or GIF · Maximum 5 MB
+            JPG, PNG, WebP or GIF · Source up to 25 MB; optimized upload up to 5 MB
           </p>
 
           {imageFile && (
